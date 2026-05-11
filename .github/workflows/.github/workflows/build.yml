@@ -1,6 +1,7 @@
 name: ZeydTech APK Builder
 on:
   push:
+  workflow_dispatch:
     paths:
       - 'latest_app.html'
 
