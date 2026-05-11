@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>تطبيق زكاتي - المقادير الشرعية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --islamic-green: #064e3b;
+            --light-green: #10b981;
+            --gold: #fbbf24;
+            --soft-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --header-h: 85px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--soft-bg); color: #1e293b; line-height: 1.4; overflow-x: hidden; }
+        
+        .app-container { max-width: 600px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+        header {
+            height: var(--header-h);
+            background: linear-gradient(135deg, var(--islamic-green), var(--light-green));
+            color: white; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--gold);
+        }
+
+        /* تنسيق أيقونة المراجع الجديدة */
+        .info-icon {
+            position: absolute; left: 20px; top: 22px; font-size: 1.2rem; cursor: pointer;
+            background: rgba(255,255,255,0.25); width: 40px; height: 40px; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: 0.3s; border: 1px solid rgba(255,255,255,0.3);
+        }
+        .info-icon:hover { background: rgba(255,255,255,0.4); transform: scale(1.05); }
+        .info-icon span { font-size: 0.55rem; font-weight: bold; margin-top: 2px; }
+
+        /* Modal Styles */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; 
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: white; margin: 20px; padding: 25px; border-radius: 25px;
+            max-width: 500px; position: relative; text-align: center; animation: slideUp 0.3s ease-out;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .close-btn { position: absolute; top: 10px; right: 20px; font-size: 28px; cursor: pointer; color: #94a3b8; }
+        .source-box { background: #f8fafc; padding: 15px; margin: 12px 0; border-radius: 15px; text-align: right; border-right: 5px solid var(--light-green); }
+
+        .main-actions {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px;
+            background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: var(--header-h); z-index: 999;
+        }
+
+        .btn-mode {
+            padding: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.2s; font-size: 0.8rem;
+        }
+        .btn-auto { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .btn-manual { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        
+        .btn-add-wrapper { padding: 0 12px 10px 12px; background: white; }
+        .btn-add {
+            width: 100%; padding: 10px; border-radius: 10px; border: 2px dashed var(--light-green);
+            background: #f0fdf4; color: var(--islamic-green); font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem;
+        }
+
+        .hint-bar { text-align: center; font-size: 0.75rem; color: #64748b; padding: 8px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; }
+
+        .content-area {
+            flex: 1; padding: 15px; display: grid; gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); align-content: start;
+            padding-bottom: 200px; 
+        }
+
+        .item-card {
+            background: var(--card-bg); border-radius: 18px; padding: 12px;
+            display: flex; flex-direction: column; align-items: center;
+            border: 2px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            transition: 0.2s; position: relative; text-align: center;
+        }
+        .item-card.selected { border-color: var(--light-green); background: #f0fdf4; }
+        .item-card.has-count { border-color: var(--gold); background: #fffbeb; transform: translateY(-3px); }
+
+        .item-card .name { font-weight: 800; color: var(--islamic-green); font-size: 1rem; margin-bottom: 2px; }
+        .item-card .weight { font-size: 0.75rem; color: #64748b; margin-bottom: 8px; background: #f1f5f9; padding: 2px 8px; border-radius: 10px; }
+
+        .price-tag { font-size: 0.75rem; margin-bottom: 10px; color: #475569; }
+        .price-tag input { 
+            width: 55px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            text-align: center; font-weight: bold; color: #1e293b; padding: 2px;
+        }
+
+        .counter { display: flex; align-items: center; gap: 10px; margin-top: auto; background: white; padding: 4px; border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .counter button { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--islamic-green); color: white; font-size: 1.3rem; cursor: pointer; }
+        .counter .val { font-weight: 900; min-width: 25px; text-align: center; font-size: 1.2rem; color: var(--islamic-green); }
+
+        footer {
+            position: fixed; bottom: 0; width: 100%; max-width: 600px;
+            background: var(--islamic-green); color: white; padding: 18px 20px;
+            border-radius: 25px 25px 0 0; box-shadow: 0 -8px 25px rgba(0,0,0,0.2); z-index: 1001;
+        }
+        .footer-main { display: flex; justify-content: space-between; align-items: center; }
+        .total-price { color: var(--gold); font-size: 1.8rem; font-weight: 900; }
+        .summary { font-size: 0.75rem; color: #d1fae5; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+
+        .select-dot { position: absolute; top: 10px; right: 10px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #cbd5e1; background: white; }
+        .selected .select-dot { background: var(--light-green); border-color: var(--light-green); box-shadow: 0 0 5px var(--light-green); }
+    </style>
+</head>
+<body>
+
+<div id="sourceModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="toggleModal(false)">&times;</span>
+        <i class="fas fa-book-open" style="font-size: 3rem; color: var(--gold); margin-bottom: 15px;"></i>
+        <h3 style="color: var(--islamic-green); margin-bottom: 10px;">المصادر والمراجع الشرعية</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">تم ضبط أوزان الأصناف بناءً على موازين الصاع النبوي المعتمدة لدى:</p>
+        
+        <div class="source-box">
+            <i class="fas fa-check-circle" style="color: var(--light-green); margin-left: 8px;"></i>
+            <strong>الشيخ محمد علي فركوس</strong> (الموقع الرسمي)
+        </div>
+        <div class="source-box">
+            <i class="fas fa-check-circle" style="color: var(--light-green); margin-left: 8px;"></i>
+            <strong>الدكتور محمد بن سعد طالبي</strong> (تقديرات 1444هـ)
+        </div>
+
+        <button onclick="toggleModal(false)" style="margin-top: 15px; width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--islamic-green); color: white; font-weight: bold; cursor: pointer;">إغلاق النافذة</button>
+    </div>
+</div>
+
+<div class="app-container">
+    <header>
+        <div class="info-icon" onclick="toggleModal(true)" title="المراجع">
+            <i class="fas fa-book"></i>
+            <span>المراجع</span>
+        </div>
+        <h2 style="margin:0">زكاتي: حساب المقادير</h2>
+        <small>وفقاً للموازين الشرعية (صاع نبوي)</small>
+    </header>
+
+    <div class="main-actions">
+        <button class="btn-mode btn-auto" onclick="autoDistribute()">
+            <span>🚀</span> التوزيع التلقائي الذكي
+        </button>
+        <button class="btn-mode btn-manual" onclick="resetToManual()">
+            <span>✍️</span> تصفير (اختيار يدوي)
+        </button>
+    </div>
+
+    <div class="btn-add-wrapper">
+        <button class="btn-add" onclick="addNewItem()">
+            <span>➕</span> إضافة صنف غير موجود
+        </button>
+    </div>
+
+    <div class="hint-bar" id="hint-text">💡 انقر على البطاقة لتحديد الأصناف المتوفرة</div>
+
+    <main class="content-area" id="grid"></main>
+
+    <footer>
+        <div class="footer-main">
+            <div>
+                <div style="font-size: 0.85rem; opacity: 0.9;">إجمالي الأصواع: <b id="total-p" style="font-size: 1.3rem; color: var(--gold);">0</b></div>
+                <div id="remain-val" style="font-size: 0.75rem; color: #fbbf24; font-weight: bold;"></div>
+            </div>
+            <div style="text-align: left;">
+                <div class="total-price" id="total-m">0 <small style="font-size: 0.9rem;">دج</small></div>
+            </div>
+        </div>
+        <div class="summary" id="summary">يرجى تحديد المواد أولاً...</div>
+    </footer>
+</div>
+
+<script>
+    // البيانات المحدثة بناءً على الصورتين
+    let items = [
+        { name: "القمح", g: 2040, p: 80, count: 0, selected: true },
+        { name: "السميد", g: 1820, p: 100, count: 0, selected: true },
+        { name: "الدقيق", g: 2000, p: 95, count: 0, selected: false },
+        { name: "الفرينة", g: 1615, p: 70, count: 0, selected: false },
+        { name: "الكسكس", g: 1900, p: 140, count: 0, selected: true },
+        { name: "المحمصة", g: 2265, p: 145, count: 0, selected: false },
+        { name: "الأرز", g: 2150, p: 180, count: 0, selected: true },
+        { name: "العدس", g: 2115, p: 260, count: 0, selected: false },
+        { name: "اللوبيا", g: 2060, p: 280, count: 0, selected: false },
+        { name: "الحمص", g: 2030, p: 360, count: 0, selected: false },
+        { name: "الجلبانة", g: 2150, p: 270, count: 0, selected: false },
+        { name: "الفول", g: 1515, p: 220, count: 0, selected: false },
+        { name: "التمر (دقلة)", g: 1800, p: 600, count: 0, selected: false },
+        { name: "الزبيب", g: 1640, p: 900, count: 0, selected: false },
+        { name: "التليتلي", g: 2070, p: 160, count: 0, selected: false },
+        { name: "مقرونة", g: 1500, p: 110, count: 0, selected: false },
+        { name: "جاري الفريك", g: 1860, p: 240, count: 0, selected: false },
+        { name: "بركوكش", g: 1950, p: 150, count: 0, selected: false },
+        { name: "دويدة (شعيرية)", g: 1630, p: 130, count: 0, selected: false }
+    ];
+
+    let remainingMoney = 0;
+
+    function toggleModal(show) {
+        document.getElementById('sourceModal').style.display = show ? 'flex' : 'none';
+    }
+
+    function render() {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        items.forEach((item, i) => {
+            const card = document.createElement('div');
+            card.className = `item-card ${item.selected ? 'selected' : ''} ${item.count > 0 ? 'has-count' : ''}`;
+            card.onclick = (e) => {
+                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                    item.selected = !item.selected;
+                    render();
+                }
+            };
+            
+            card.innerHTML = `
+                <div class="select-dot"></div>
+                <div class="name">${item.name}</div>
+                <div class="weight">${item.g} غرام</div>
+                <div class="price-tag">
+                    السعر: <input type="number" value="${item.p}" onchange="items[${i}].p = parseFloat(this.value); updateTotals();">
+                </div>
+                <div class="counter">
+                    <button onclick="changeCount(${i}, -1); event.stopPropagation();">−</button>
+                    <div class="val">${item.count}</div>
+                    <button onclick="changeCount(${i}, 1); event.stopPropagation();">+</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        updateTotals();
+    }
+
+    function addNewItem() {
+        const name = prompt("اسم الصنف الجديد:");
+        if (!name) return;
+        const weight = prompt("الوزن للصاع الواحد (غرام):", "2000");
+        const price = prompt("سعر الكيلو (دج):", "150");
+        items.unshift({ name, g: parseInt(weight) || 2000, p: parseFloat(price) || 100, count: 0, selected: true });
+        render();
+    }
+
+    function changeCount(i, delta) {
+        items[i].count = Math.max(0, items[i].count + delta);
+        if(items[i].count > 0) items[i].selected = true;
+        render();
+    }
+
+    function resetToManual() {
+        if(confirm("هل تريد تصفير جميع الكميات؟")) {
+            items.forEach(it => it.count = 0);
+            remainingMoney = 0;
+            render();
+        }
+    }
+
+    function autoDistribute() {
+        let selected = items.filter(it => it.selected);
+        if(selected.length === 0) { alert("يرجى اختيار المواد أولاً بالضغط على البطاقات"); return; }
+        let budget = parseFloat(prompt("الميزانية الإجمالية المتوفرة (دج):", "10000"));
+        let people = parseInt(prompt("عدد أفراد العائلة (عدد الأصواع):", "5"));
+        if(isNaN(budget) || isNaN(people)) return;
+        items.forEach(it => it.count = 0);
+        let totalSpent = 0;
+        let pool = selected.map(it => ({ index: items.indexOf(it), unitCost: (it.g * it.p) / 1000 })).sort((a,b) => b.unitCost - a.unitCost);
+        for(let r=0; r<50; r++) {
+            let added = 0;
+            for(let p=0; p<people; p++) {
+                let item = pool[(p+r) % pool.length];
+                if(totalSpent + item.unitCost <= budget) { items[item.index].count++; totalSpent += item.unitCost; added++; }
+            }
+            if(added === 0) break;
+        }
+        remainingMoney = budget - totalSpent;
+        render();
+    }
+
+    function updateTotals() {
+        let totalP = 0, totalM = 0, details = [];
+        items.forEach(it => {
+            if(it.count > 0) {
+                totalP += it.count;
+                totalM += (it.g * it.count / 1000) * it.p;
+                details.push(`${it.count} ${it.name}`);
+            }
+        });
+        document.getElementById('total-p').innerText = totalP;
+        document.getElementById('total-m').innerHTML = Math.round(totalM).toLocaleString() + ' <small>دج</small>';
+        document.getElementById('summary').innerText = details.length > 0 ? "السلة: " + details.join(' + ') : "المواد المختارة للتوزيع: " + items.filter(it=>it.selected).length;
+        document.getElementById('remain-val').innerText = remainingMoney > 0 ? `الباقي من الميزانية: ${Math.round(remainingMoney)} دج` : "";
+    }
+
+    render();
+</script>
+
+</body>
+</html>
